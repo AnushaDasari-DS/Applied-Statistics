@@ -1,0 +1,102 @@
+---
+title: "Project - Part 3"
+Author: Anusha Dasari
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+**1) Stepwise Regression:**
+
+```{r Libraries}
+library(readxl)
+library(leaps)
+library(car)
+```
+
+
+```{r data}
+linth_df=read_excel("/Users/anusha_dasari/Downloads/LINTH-5.xlsx") #loading the data to R
+linth_df=linth_df[-1:-3] #removing unnecessary variables
+linth_df # displaying the content of the data
+```
+```{r step1}
+model1<-lm(BIO~SAL,data=linth_df)
+model2<-lm(BIO~pH,data=linth_df)
+model3<-lm(BIO~K,data=linth_df)
+model4<-lm(BIO~Na,data=linth_df)
+model5<-lm(BIO~Zn,data=linth_df)
+
+summary(model1)$coefficients
+summary(model2)$coefficients
+summary(model3)$coefficients
+summary(model4)$coefficients
+summary(model5)$coefficients
+```
+
+From the above results, we have to choose the one with smallest p-value and p-value less than alphaE=0.15 is *pH*. pH is entered to the equation.
+In next step, we will check the next predictor that can be added.
+
+```{r step2}
+model6<-lm(BIO~pH+SAL,data=linth_df)
+model7<-lm(BIO~pH+K,data=linth_df)
+model8<-lm(BIO~pH+Na,data=linth_df)
+model9<-lm(BIO~pH+Zn,data=linth_df)
+
+summary(model6)$coefficients
+summary(model7)$coefficients
+summary(model8)$coefficients
+summary(model9)$coefficients
+```
+
+On observing the above results, predictor variable 'Na' has smaller p-value and is less than alphaE=0.15, hence 'Na' enters the equation. But, now we have to check if this affects 'pH'. The p-value of estimated coefficient of 'pH' is less than alphaR=0.15, therefore it does not have any negative effect and 'Na' is added to the regression equation.
+
+Next, we will check for other predictors that can be added.
+```{r step3}
+model10<-lm(BIO~pH+Na+SAL,data=linth_df)
+model11<-lm(BIO~pH+Na+K,data=linth_df)
+model12<-lm(BIO~pH+Na+Zn,data=linth_df)
+
+summary(model10)$coefficients
+summary(model11)$coefficients
+summary(model12)$coefficients
+```
+As you can see from the above result, the p-value for estimated coefficients of SAL,K and Zn are greater than alphaE=0.15, none of the predictors enters the regression equation. Hence, our final model will be **BIO~pH+Na**.
+
+**2)Best Subset Selection:**
+```{r Step-1}
+#Identify all possible models
+subsets <- regsubsets(BIO~SAL+pH+K+Na+Zn, method="exhaustive", nbest=2, data=linth_df )
+summary(subsets)
+summary(subsets)$adjr2
+summary(subsets)$cp
+```
+
+Two-variable models with small Cp values are pH+Na(2.281592) and pH+K(3.593736).
+
+```{r vif}
+model_13=lm(BIO~pH+Na, data=linth_df)
+model_14=lm(BIO~pH+K, data=linth_df)
+
+vif(model_13)
+vif(model_14)
+```
+pH+K model has lower VIF value.
+
+**On the basis of Cp, BIO~pH+K is the best two-variable model!**
+
+
+Below are the fitted plots for the final model.
+```{r Plot}
+plot(lm(BIO~pH+K,data=linth_df))
+```
+As you observe the residual plot, it is horizontally distributed along line 0, there is no trend of linear relationship. And in Normal probability plot, the distribution around both sides of linear line is roughly equal. This shows that all necessary predictors were included in the model to predict Y (i.e BIO).
+
+```{r coef}
+k=coef(model_14)
+k
+```
+
+Final best model is BIO = -506.9773515 + (412.0395455)pH - (0.4870976)K
+
+-------------------
